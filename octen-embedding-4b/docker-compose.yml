@@ -19,7 +19,7 @@ services:
     ulimits:
       memlock: -1
       stack: 67108864
-    shm_size: "32gb"
+    shm_size: "4gb"
     command: >
       python3 -m sglang.launch_server
       --model-path Octen/Octen-Embedding-4B
@@ -27,7 +27,9 @@ services:
       --port 30001
       --is-embedding
       --trust-remote-code
-      --mem-fraction-static 0.85
+      --mem-fraction-static 0.30
+      --chunked-prefill-size 4096
+      --disable-radix-cache
       --enable-metrics
       --json-model-override-args '{"architectures":["Qwen3ForCausalLM"]}'
     healthcheck:
