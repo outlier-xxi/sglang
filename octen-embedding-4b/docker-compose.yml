@@ -1,0 +1,38 @@
+services:
+  sglang-embedding:
+    # Use the Spark-platform image (CUDA 13.0, supports GB10/sm_121a).
+    # lmsysorg/sglang:latest ships Triton ptxas 12.8 which does not recognise sm_121a.
+    image: lmsysorg/sglang:spark
+    container_name: octen-embedding-4b
+    restart: unless-stopped
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - TIKTOKEN_CACHE_DIR=/tiktoken_encodings
+    volumes:
+      - /opt/huggingface:/root/.cache/huggingface
+      - /opt/tiktoken_encodings:/tiktoken_encodings
+    ports:
+      - "30001:30001"
+    ipc: host
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    shm_size: "32gb"
+    command: >
+      python3 -m sglang.launch_server
+      --model-path Octen/Octen-Embedding-4B
+      --host 0.0.0.0
+      --port 30001
+      --is-embedding
+      --trust-remote-code
+      --mem-fraction-static 0.85
+      --enable-metrics
+      --json-model-override-args '{"architectures":["Qwen3ForCausalLM"]}'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:30001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
