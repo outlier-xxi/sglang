@@ -1,0 +1,33 @@
+services:
+  sglang:
+    image: lmsysorg/sglang:spark
+    container_name: sglang-gpt-oss-20b
+    ports:
+      - "30000:30000"
+    volumes:
+      - /opt/huggingface:/root/.cache/huggingface
+      - /opt/tiktoken_encodings:/tiktoken_encodings
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+      - TIKTOKEN_ENCODINGS_BASE=/tiktoken_encodings
+    shm_size: 4g
+    # --enable-metrics: Prometheus metrics exporter
+    # --mem-fraction-static: fraction of GPU/CPU memory pre-allocated for KV cache (dev: lower = less RAM)
+    # --max-running-requests: caps concurrent requests to reduce peak RAM in dev
+    command: >
+      python3 -m sglang.launch_server
+      --model-path openai/gpt-oss-20b
+      --host 0.0.0.0
+      --port 30000
+      --reasoning-parser gpt-oss
+      --tool-call-parser gpt-oss
+      --enable-metrics
+      --mem-fraction-static 0.3
+      --max-running-requests 10
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
